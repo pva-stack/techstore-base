@@ -1,6 +1,8 @@
 import { Link, NavLink } from 'react-router'
 
 export default function Header({ clienteAtual }) {
+  const eLojista = clienteAtual?.id === 'lojista'
+
   return (
     <header className="header">
       <p className="faixa-aviso">Troca grátis em até 30 dias · Parcele em até 10x sem juros</p>
@@ -14,9 +16,11 @@ export default function Header({ clienteAtual }) {
           <NavLink to="/" end className="nav-link">
             Loja
           </NavLink>
-          <NavLink to="/estoque" className="nav-link nav-link-interna">
-            Área interna
-          </NavLink>
+          {eLojista && (
+            <NavLink to="/estoque" className="nav-link nav-link-interna">
+              Painel do lojista
+            </NavLink>
+          )}
         </nav>
 
         <div className="header-acoes">

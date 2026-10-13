@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route } from 'react-router'
+import { Routes, Route, useLocation } from 'react-router'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import RolarParaTopo from './components/RolarParaTopo'
@@ -10,13 +10,35 @@ import Estoque from './pages/Estoque'
 import { buscarProdutos } from './services/produtos'
 import { buscarClientes } from './services/clientes'
 
+const LOJISTA_ID = 'lojista'
+
 export default function App() {
   const [produtos, setProdutos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
-  const [carrinho, setCarrinho] = useState([])
+  const [carrinhosPorCliente, setCarrinhosPorCliente] = useState({})
   const [clientes, setClientes] = useState([])
   const [clienteAtualId, setClienteAtualId] = useState(null)
+  const [listaEspera, setListaEspera] = useState([])
+  const [painelLiberado, setPainelLiberado] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem('techstore-painel-lojista') === 'true'
+  })
+  const localizacao = useLocation()
+
+  const carrinho = clienteAtualId ? carrinhosPorCliente[clienteAtualId] ?? [] : []
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('techstore-painel-lojista', String(painelLiberado))
+    }
+  }, [painelLiberado])
+
+  useEffect(() => {
+    if (localizacao.pathname !== '/estoque') {
+      setPainelLiberado(false)
+    }
+  }, [localizacao.pathname])
 
   useEffect(() => {
     buscarProdutos()
@@ -31,24 +53,73 @@ export default function App() {
   }, [])
 
   function adicionarAoCarrinho(produto) {
-    setCarrinho(carrinho.concat(produto))
+    if (!clienteAtualId) return
+    if (!produto || !Number.isFinite(Number(produto.price)) || Number(produto.estoque) === 0) {
+      return
+    }
+
+    setCarrinhosPorCliente((carrinhosAtuais) => ({
+      ...carrinhosAtuais,
+      [clienteAtualId]: [...(carrinhosAtuais[clienteAtualId] ?? []), produto],
+    }))
   }
 
   function removerUmaUnidade(produtoId) {
-    // Remove só a primeira unidade encontrada do produto
-    let removido = false
-    setCarrinho(
-      carrinho.filter((produto) => {
-        if (!removido && produto.id === produtoId) {
-          removido = true
-          return false
-        }
-        return true
-      })
-    )
+    if (!clienteAtualId) return
+
+    setCarrinhosPorCliente((carrinhosAtuais) => {
+      const atual = carrinhosAtuais[clienteAtualId] ?? []
+      let removido = false
+
+      return {
+        ...carrinhosAtuais,
+        [clienteAtualId]: atual.filter((produto) => {
+          if (!removido && produto.id === produtoId) {
+            removido = true
+            return false
+          }
+          return true
+        }),
+      }
+    })
   }
 
-  const clienteAtual = clientes.find((cliente) => cliente.id === clienteAtualId)
+  function registrarInteresse(produto, cliente) {
+    if (!produto || !cliente || !cliente.email) return
+
+    setListaEspera((interessados) => {
+      const existe = interessados.some(
+        (item) => item.produtoId === produto.id && item.email === cliente.email
+      )
+
+      if (existe) return interessados
+
+      return [
+        ...interessados,
+        {
+          id: `${produto.id}-${cliente.email}`,
+          produtoId: produto.id,
+          produtoTitulo: produto.title,
+          nome: cliente.nome,
+          email: cliente.email,
+        },
+      ]
+    })
+  }
+
+  const clientesCompletos = [
+    ...clientes,
+    {
+      id: LOJISTA_ID,
+      nome: 'Lojista',
+      email: 'lojista@techstore.com.br',
+      tipo: 'lojista',
+    },
+  ]
+
+  const clienteAtual = clientesCompletos.find((cliente) => cliente.id === clienteAtualId)
+  const clienteAtualEhLojista = clienteAtual?.id === LOJISTA_ID
+  const painelDisponivel = clienteAtualEhLojista || painelLiberado
 
   return (
     <div className="app">
@@ -67,7 +138,15 @@ export default function App() {
             />
             <Route
               path="/produto/:id"
-              element={<PaginaProduto produtos={produtos} onAdicionar={adicionarAoCarrinho} />}
+              element={
+                <PaginaProduto
+                  produtos={produtos}
+                  clienteAtual={clienteAtual}
+                  listaEspera={listaEspera}
+                  onAdicionar={adicionarAoCarrinho}
+                  onAvisarQuandoDisponivel={registrarInteresse}
+                />
+              }
             />
             <Route
               path="/carrinho"
@@ -81,15 +160,41 @@ export default function App() {
                 />
               }
             />
-            <Route path="/estoque" element={<Estoque produtos={produtos} />} />
+            <Route
+              path="/estoque"
+              element={
+                <Estoque
+                  produtos={produtos}
+                  listaEspera={listaEspera}
+                  painelLiberado={painelDisponivel}
+                  onLiberarPainel={(senha) => {
+                    const senhaCorreta = senha === 'techstore2026'
+                    setPainelLiberado(senhaCorreta)
+                    return senhaCorreta
+                  }}
+                />
+              }
+            />
           </Routes>
         )}
       </main>
 
       <Footer
-        clientes={clientes}
+        clientes={clientesCompletos}
         clienteAtualId={clienteAtualId}
-        onTrocarCliente={setClienteAtualId}
+        onTrocarCliente={(novoClienteId) => {
+          if (novoClienteId === LOJISTA_ID) {
+            const senha = typeof window !== 'undefined' ? window.prompt('Digite a senha do lojista:') : null
+            if (senha !== 'techstore2026') {
+              return
+            }
+          }
+
+          setClienteAtualId(novoClienteId)
+          if (novoClienteId !== LOJISTA_ID) {
+            setPainelLiberado(false)
+          }
+        }}
       />
     </div>
   )

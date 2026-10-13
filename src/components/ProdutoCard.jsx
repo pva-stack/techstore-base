@@ -2,7 +2,10 @@ import { Link } from 'react-router'
 import { formatarPreco } from '../utils/formatarPreco'
 
 export default function ProdutoCard({ produto, onAdicionar }) {
-  const esgotado = produto.estoque === 0
+  const precoValido = Number.isFinite(Number(produto.price))
+  const esgotado = Number(produto.estoque) === 0
+  const semPreco = !precoValido
+  const temFreteGratis = precoValido && Number(produto.price) > 100
 
   return (
     <article className="card">
@@ -21,16 +24,25 @@ export default function ProdutoCard({ produto, onAdicionar }) {
         {produto.precoOriginal && (
           <span className="preco-original">{formatarPreco(produto.precoOriginal)}</span>
         )}
-        <span className="preco">{formatarPreco(produto.price)}</span>
+        {precoValido ? (
+          <span className="preco">{formatarPreco(produto.price)}</span>
+        ) : (
+          <span className="preco preco-pequeno">Preço em revisão</span>
+        )}
       </div>
 
       <div className="card-selos">
-        {produto.price > 100 && <span className="selo selo-frete">Frete grátis</span>}
+        {temFreteGratis && <span className="selo selo-frete">Frete grátis</span>}
+        {semPreco && <span className="selo selo-alerta">Sem preço</span>}
         {esgotado && <span className="selo selo-esgotado">Esgotado</span>}
       </div>
 
-      <button className="botao" onClick={() => onAdicionar(produto)} disabled={esgotado}>
-        Adicionar ao carrinho
+      <button
+        className="botao"
+        onClick={() => onAdicionar(produto)}
+        disabled={esgotado || semPreco}
+      >
+        {semPreco ? 'Indisponível' : 'Adicionar ao carrinho'}
       </button>
     </article>
   )

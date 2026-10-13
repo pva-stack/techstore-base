@@ -395,7 +395,7 @@ h2 {
   font-size: 0.85rem;
 }
 
-.preco-original + .preco {
+.preco-original+.preco {
   color: var(--cor-destaque);
 }
 
@@ -404,6 +404,58 @@ h2 {
   flex-wrap: wrap;
   gap: var(--espaco-1);
   min-height: 1.5rem;
+}
+
+.painel-estoque {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--espaco-4);
+  margin: var(--espaco-5) 0 var(--espaco-6);
+}
+
+.painel-card {
+  background: linear-gradient(135deg, var(--cor-superficie), #f7f4ef);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  padding: var(--espaco-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  box-shadow: 0 8px 18px rgba(21, 23, 28, 0.03);
+}
+
+.painel-card span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.painel-card strong {
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+  letter-spacing: -0.03em;
+}
+
+.tabela-moldura+h2,
+section>h2 {
+  margin-top: var(--espaco-6);
+}
+
+.form-acesso {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin-top: var(--espaco-3);
+}
+
+.form-acesso input {
+  width: 100%;
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-pequeno);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
 }
 
 .selo {
@@ -622,7 +674,7 @@ h2 {
   padding: var(--espaco-4);
 }
 
-.item-carrinho + .item-carrinho {
+.item-carrinho+.item-carrinho {
   border-top: 1px solid var(--cor-borda);
 }
 

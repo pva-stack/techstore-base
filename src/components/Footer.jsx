@@ -28,16 +28,19 @@ export default function Footer({ clientes, clienteAtualId, onTrocarCliente }) {
 
         {/* Ambiente de testes: simula qual cliente está navegando na loja */}
         <label className="cliente-simulado">
-          Cliente de teste
+          Conta ativa
           <select
             value={clienteAtualId || ''}
             onChange={(evento) => onTrocarCliente(evento.target.value)}
           >
-            {clientes.map((cliente) => (
-              <option key={cliente.id} value={cliente.id}>
-                {cliente.nome}
-              </option>
-            ))}
+            <option value="lojista">Lojista</option>
+            {clientes
+              .filter((cliente) => cliente.id !== 'lojista')
+              .map((cliente) => (
+                <option key={cliente.id} value={cliente.id}>
+                  {cliente.nome}
+                </option>
+              ))}
           </select>
         </label>
       </div>
